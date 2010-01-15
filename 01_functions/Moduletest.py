@@ -5,13 +5,8 @@ Created on 22.12.2009
 @author: Masha
 '''
 
-#форматирование строк
-print "Hello, world" 
-print "First, thou shalt count to {0}".format('hello') # References first positional argument
-print "My quest is {name}".format(name='My')             # References keyword argument 'name'
-ARG ={1:'1',2:'2',3:'3',4:'4'}
+#форматирование стро
 print "hello my %s litle friend" % (ARG,)
-
 x = {
      'source': 'Library',
      'module': 'foo',
@@ -31,7 +26,7 @@ print file_to_list('test.txt')
 #filename = raw_input('Give file name:')            
 #print file_to_list(filename)  
 
-#считывание из файла, строки через : с распознованием типа
+
 def file_to_list2(filename):
     res = []
     for i in open(filename):
