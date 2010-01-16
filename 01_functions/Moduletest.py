@@ -68,7 +68,7 @@ def better_ftl2(fname):
         res.append(tuple(record))
     return res
 
-print file_to_list2('test.txt')        
+     
 
 
 #1
