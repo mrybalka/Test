@@ -65,9 +65,6 @@ def better_ftl2(fname):
             is_digit = element.isdigit()
             action = converters[is_digit]
             record.append(action(element))
-        ## или то же самое, но в более короткой форме, с использованием
-        ## generator expression внутри tuple()
-        # record = tuple(converters[x.isdigit()](x) for x in xline.split(':'))
         res.append(tuple(record))
     return res
 
