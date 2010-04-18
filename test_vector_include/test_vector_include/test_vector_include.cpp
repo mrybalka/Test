@@ -45,29 +45,33 @@ matrix<bool> generate_graph(int n, double p)
 }
 
 
-// поск пути по которому возможно пустить поток алгоритмом обхода графа в ширину
-// функция ищет путь из истока в сток по которому еще можно пустить поток,
-// считая вместимость ребера (i,j) равной c[i][j] - f[i][j],
-// т.е. после каждой итерации(одна итерация - один поик пути) уменьшаем вместимости ребер,
-// на величину пущеного потока
-int FindPath(int NUM_VERTICES, matrix<int> c, matrix<int> &f, int source, int target) // source - исток, target - сток
-{
-   const int INFINITY = 10000; // условное число обозначающее бесконечность
+// Поиск пути, по которому возможно пустить поток. Алгоритм обхода графа в ширину.
+// Функция ищет путь из истока в сток по которому еще можно пустить поток 
+// во вспомагательной сети, где пропускные способности заданы матрицей c_f, 
+// величины потоков(матрица f)относятся к исходному оргграфу графу с числом вершин 2*n. 
 
+int* FindPath(int NUM_VERTICES, matrix<int> c_f, matrix<int> c, matrix<int> &f, int source, int target) // source - исток, target - сток
+//matrix<int> c_f -- пропускные способности ребер в вспомогательной сети
+//matrix<int> c -- пропускные способности ребер в первоначальной сети
+//matrix<int> f -- поток в первоначальной сети
+//NUM_VERTICES - количество вершин сети = 2*n
+//source -источник, target -сток
+{
+   const int INFINITY = 1000; // условное число обозначающее бесконечность
+   // набор вспомогательных переменных используемых функцией FindPath - обхода в ширину
+   int* Link;
    // Link используется для нахождения собственно пути
    // Link[i] хранит номер предыдущей вешины на пути i -> исток
-   int* Link;
-   int* Queue; // очередь
-   int* Flow;
+   int* Queue; // очередь вершин для просмотра
+   int* Flow;  // Flow - значение потока чарез данную вершину на данном шаге поиска
    int QP, QC; // QP - указатель начала очереди и QC - число эл-тов в очереди
-   
-   // набор вспомогательных переменных используемых функцией FindPath - обхода в ширину
-   // Flow - значение потока чарез данную вершину на данном шаге поиска
-   Flow=new int[NUM_VERTICES];
-   Link=new int[NUM_VERTICES];
-   Queue=new int[NUM_VERTICES];
-    
-	    QP = 0; QC = 1; Queue[0] = source;
+      
+		Flow = new int[NUM_VERTICES];
+		Link = new int[NUM_VERTICES];
+		Queue = new int[NUM_VERTICES];
+		memset(Queue, -1 , sizeof(int)*NUM_VERTICES); 
+
+        QP = 0; QC = 1; Queue[0] = source;
         Link[target] = -1; // особая метка для стока
         int i;
         int CurVertex;
@@ -79,86 +83,178 @@ int FindPath(int NUM_VERTICES, matrix<int> c, matrix<int> &f, int source, int ta
                 CurVertex = Queue[QP];
                 for (i=0; i<NUM_VERTICES; i++)
                 // проверяем можем ли мы пустить поток по ребру (CurVertex,i):
-                if ((c[CurVertex][i] - f[CurVertex][i])>0 && Flow[i] == 0) 
+                if (c_f[CurVertex][i]>0 && Flow[i] == 0) 
                 {
                         // если можем, то добавляем i в конец очереди
                         Queue[QC] = i; QC++;
                         Link[i] = CurVertex; // указываем, что в i добрались из CurVertex
                         // и находим значение потока текущее через вершину i
-                        if (c[CurVertex][i]-f[CurVertex][i] < Flow[CurVertex])
-                             Flow[i] = c[CurVertex][i];
+                        if (c_f[CurVertex][i] < Flow[CurVertex])
+                             Flow[i] = c_f[CurVertex][i];
                         else
                              Flow[i] = Flow[CurVertex];
                 }
             QP++;// прерходим к следующей в очереди вершине
         }
         // закончив поиск пути
-        if (Link[target] == -1) return 0; // мы или не находим путь и выходим
+		int* res = new int[NUM_VERTICES+1];
+		for (int i=0; i<NUM_VERTICES+1; i++)
+				res[i]=0;
+
+		if (Link[target] == -1) {
+			res[0]=0;
+			for (int i=1; i<NUM_VERTICES+1; i++)
+				res[i]=Queue[i-1];
+			//res[0] -величина максимального потока, далее перечисляются вершины множества W
+			// то есть номера вершин достижимых из стока на последней итерации, далее
+			// массив заполнен -1.
+			delete [] Flow; 
+		    delete [] Link; 
+		    delete [] Queue; 
+					
+			return res; // мы или не находим путь и выходим
+		}
         // или находим:
         // тогда Flow[target] будет равен потоку который "дотек" по данному пути из истока в сток
         // тогда изменяем значения массива f для  данного пути на величину Flow[target]
-        CurVertex = target;
+        //--------------------------FLOW-----------------------------------------------
+		CurVertex = target;
         while (CurVertex != source) // путь из стока в исток мы восстанавливаем с помощбю массива Link
         {
-                f[Link[CurVertex]][CurVertex] +=Flow[target];
+                //в вспомагательной сети ищется путь, а потом он приводиться к полу пути в искомой сети 
+			//flow найден для вспомогательной сети,а поток f изменяется для исходного графа 
+			//Note: если искать поток в исходной сети, то нужно на каждой итерации искать 
+			//дополняющий ПОЛУпуть(то есть прямодопустимые и обратнодопустимые дуги)
+			//здесь же строиться вспомогательная сеть и в ней ищется простой путь, состоящий
+			//только из прямодопустимых дуг, пропуская способность которых уже содержит в 
+			//себе пропускную способность обратных.
+			if (c[Link[CurVertex]][CurVertex] - f[Link[CurVertex]][CurVertex]>= Flow[target])
+				f[Link[CurVertex]][CurVertex] +=Flow[target];
+			else
+			{
+                f[Link[CurVertex]][CurVertex] = c[Link[CurVertex]][CurVertex];
+                f[CurVertex][Link[CurVertex]] -=Flow[target]-(c[Link[CurVertex]][CurVertex] - f[Link[CurVertex]][CurVertex]);
+			}
                 CurVertex = Link[CurVertex];
         }
-        return Flow[target]; // Возвращаем значение потока которое мы еще смогли "пустить" по графу
+		
+		res[0]=Flow[target];
+		delete [] Flow; 
+		delete [] Link; 
+		delete [] Queue; 
+		return res; 
 }
 
 // основная функция поиска максимального потока
-int MaxFlow(int NUM_VERTICES, matrix<int> c, matrix<int> &f, int source, int target) // source - исток, target - сток
-//c передается созданная и заполненная, f передается созданная
+int* MaxFlow(matrix<bool> org_graph, int NUM_VERTICES, matrix<int> c, int source, int target) 
+//source - исток, target - сток
+//функция возвращает вектор длинны NUM_VERTICES+1, нулевая компонента это величина 
+//максимального потока, далее идут номера вершин, которые достижимы из стока, далее 
+//массив заполнен -1
 {
-        // инициализируем переменные:
+    matrix<int> f; // f - массив содержащий текушее значение потока
+	f = matrix<int>(NUM_VERTICES, NUM_VERTICES); // f[i][j] - поток текущий от вершины i к j
+	// инициализируем переменные:
 	for(int i=0; i<NUM_VERTICES; i++){
 		for (int j=0; j<NUM_VERTICES; j++){
 			 f[i][j]=0; // по графу ничего не течет
 		}
 	}
-	    //memset(f, 0, sizeof(int)*MAX_VERTICES*MAX_VERTICES); 
-        int MaxFlow = 0; // начальное значение потока
-        int AddFlow;
-        do
+        int MaxFlow =0; // начальное значение потока
+        int* AddFlow;
+		matrix<int> c_f;
+		c_f = matrix<int>(NUM_VERTICES, NUM_VERTICES);
+        while (true)
         {
-                // каждую итерацию ищем какй-либо простой путь из истока в сток
-                // и какой еще поток мажет быть пущен по этому пути
-                AddFlow = FindPath(NUM_VERTICES, c, f, source, target);
-			    MaxFlow += AddFlow;
-        } while (AddFlow >0);// повторяем цикл пока поток увеличивается
-        return MaxFlow;
+			// каждую итерацию ищем какй-либо простой путь из истока в сток
+            // и какой еще поток мажет быть пущен по этому пути
+            
+			//ПЕРЕСЧИТАТЬ c_f ДЛЯ ВСПОМОГАТЕЛЬНОЙ СЕТИ    
+			for(int i=0; i<NUM_VERTICES; i++){
+	        	for (int j=0; j<NUM_VERTICES; j++){
+	                if ((org_graph[i][j]==1 && f[i][j]<c[i][j])||(org_graph[j][i]==1 && f[j][i]!=0))
+						c_f[i][j] = c[i][j] - f[i][j] + f[j][i];
+					else
+						c_f[i][j] = 0;
+				}
+			}
+			//cout<<c_f;
+			AddFlow = FindPath(NUM_VERTICES, c_f, c, f, source, target);
+			if (AddFlow[0] != 0){
+				MaxFlow += AddFlow[0];
+				delete[] AddFlow;
+	
+			}
+			else{
+				AddFlow[0] = MaxFlow;
+				return AddFlow;
+			}
+	    } // повторяем цикл пока поток увеличивается
+        
 }
 
-int* find_local_connectivity(matrix<int> c, int n_, int s2, int t1)
-//retutn array len n, array[i]=1 if this vertex need to delete
+int* find_local_connectivity(matrix<bool> org_graph, matrix<int> c, int n_, int s2, int t1)
+//Аргументы: n_ чило вершин в исходном графе,
+// s2, t1 вершины между которыми ищется локальная связность в сети предствленной org_graph
+//Функция возвращает массив длины n_, array[i]=1 if this vertex need to delete
 {
-	matrix<int> f;
-	// f - массив садержащий текушее значение потока
-    // f[i][j] - поток текущий от вершины i к j
-
 	int* local_connectivity = new int[n_];
-    
-	for (int i=0; i<n_; i++)
+    for (int i=0; i<n_; i++)
        local_connectivity[i] = 0;
 
-    f = matrix<int>(2*n_, 2*n_);    
-    MaxFlow(2*n_, c, f, s2, t1);
-		//с помощью f и с найти вершины одной части разреза, вычислить ребра мин разреза 
-		// из ребер получить вершины
+    int* W; //W содержит номера вершин достижимых из стока на последней итерации
+	W = MaxFlow(org_graph, 2*n_, c, s2, t1);
+	int* W_ = new int[2*n_+1]; //дополняющее множество вершин разреза
+	//Строим дополняющее множество вершин
+	W_[0] = W[0];
+	bool flag;
+	int WC=1;
+	for (int i=1; i<2*n_+1; i++) W_[i]=-1;
+	for (int i=0; i<2*n_; i++){
+		flag = false;
+		for (int j=1; j<2*n_+1; j++)
+			if (W[j]==i){ 
+				flag=true;
+				break;
+			}
+		if (flag == false){
+			W_[WC]=i;
+		    WC++;
+		}
+	}
+	//for (int i=0; i<2*n_+1; i++)
+	//	cout<<W_[i]<<" ";
+	//есть два компонента разреза, поиск ребр ведущих из одной компоненты в другую
+	for(int i=1; i<2*n_+1; i++){
+		for(int j=1; j<2*n_+1; j++)
+		   if (W[i]!=-1 && W_[j]!=-1 && org_graph[W[i]][W_[j]]==1 && W[i]+1==W_[j])
+			   local_connectivity[W[i]/2]=1;
+	}
+	//cout<<endl;
+	//cout<<"local connectivity =";
+	//for(int i=0; i<n_; i++)
+	//	cout<<local_connectivity[i]<<" ";
+	//cout<<endl;
+	delete[] W;
+	delete[] W_;
 	return local_connectivity;
 }
-int len(int* _array)
+int len(int* _array, int n)
+//Возвращает количество единиц в массиве, заданной длины
 {
-	int l = 0;
+	int lenght = 0;
 	for (int i=0; i<n; i++)
 		if (_array[i]==1)
-			l++;
-	return l;
+			lenght ++;
+	return lenght;
 }
 
 int* find_vertex_connectivity(int n)
+//Функция возвращает массив размера n, i элемент массива равен 1, если вершину i нужно
+//удалить из графа, чтобы он распался на компоненты связности
 {
-  matrix<int> C;
+  matrix<int> c;
+  matrix<bool> org_graph;
   int* local_connectivity;
   const int infinity = 1000;
   
@@ -170,156 +266,159 @@ int* find_vertex_connectivity(int n)
  
   // с - массив содержащий вместимоти ребер,
   // т.е. c[i][j] - максимальная величину потока способная течь по ребру (i,j)
+  //строим модифицированный граф с раздвоенными вершинами , заполняем матрицу c
+  // c[i][j] = 0 если вершины не смежны
+  // c[i][j] = 1 or infinity  если вершины смежны
+  c = matrix<int>(2*n, 2*n);
+  org_graph = matrix<bool>(2*n, 2*n);
   
-  //строим модифицированный граф с раздвоенными вершинами , заполняем матрицу С
-  // C[i][j] = 0 если вершины не смежны
-  // C[i][j] = 1 or infinyty  если вершины смежны
-  C = matrix<int>(2*n, 2*n);
-  for (int i=0; i<n; ++i)
-	for (int j=0; j<n; ++j) 
-		C[i][j]=0;
-  //СДЕЛАТЬ ПРАВИЛЬНОЕ ПОСТРОЕНИЕ ДВОЙНОГО ГРАФА
-  int i_old, j_old;
-  for (int i=0; i<n; ++i)
-	for (int j=0; j<n; ++j) 
+  for (int i=0; i<2*n; ++i)
+	  for (int j=0; j<2*n; ++j){ 
+		c[i][j]=0;
+        org_graph[i][j]=0;
+	  }
+  
+  //ПОСТРОЕНИЕ ДВОЙНОГО ГРАФА
+  //i_old --> (2*i_old, 2*i_old+1)
+  //(i_old,j_old) --->  (2*i_old, 2*i_old+1)  c=1
+  //                    (2*j_old, 2*j_old+1)  c=1
+  //                    (2*i_old+1, 2*j_old)  c=infinity
+  //                    (2*j_old+1, 2*i_old)  c=infinity
+  for (int i_old=0; i_old<n; ++i_old)
+  {
+	for (int j_old=i_old; j_old<n; ++j_old) 
 	{
-      if (((i%2 == 0)&&(j%2 ==0)) || ((i%2 != 0)&&(j%2 !=0))) C[i][j] = 0;
-	  else
-	   {
-		   i_old = i/2;
-		   j_old = j/2;
-		   if (Graph[i_old][j_old] == 1)
-		   {
-			   if (i_old==j_old){
-			       C[i][j]=1;
-				   C[j][i]=1;}
-			   else{
-				   C[i][j]=infinity;
-				   C[j][i]=infinity;}
-			       
-     	   }
-	   }
+		if (i_old == j_old) continue;
+		if (Graph[i_old][j_old] == 1){
+            c[2*i_old][2*i_old+1]=1;
+            c[2*j_old][2*j_old+1]=1;
+            c[2*i_old+1][2*j_old]=infinity;
+			c[2*j_old+1][2*i_old]=infinity;
+		    
+			org_graph[2*i_old][2*i_old+1]=1;
+            org_graph[2*j_old][2*j_old+1]=1;
+            org_graph[2*i_old+1][2*j_old]=1;
+			org_graph[2*j_old+1][2*i_old]=1;
+		    
+		}
 	}
-  cout<<C<<endl;
+  }
+    
+  //cout<<c<<endl;
+  //Алгоритм поиска вершинной связности
   for (int s=0; s<n; ++s)
-	for (int t=0; t<n; ++t) 
+	for (int t=s+1; t<n; ++t) 
 	{
 		if (Graph[s][t])  continue;
 		//s1 = 2*s, s2 = 2*s + 1
 		//... находим величину flow максимального потока из s2 в t1 ...
-		local_connectivity  = find_local_connectivity(C, n, 2*s+1, 2*t);
-        if (len(local_connectivity) < len(global_connectivity))
-		{
-			delete [] global_connectivity;
-			global_connectivity = local_connectivity;
+		//cout<<"s= "<<s*2+1<<endl;
+		//cout<<"t= "<<2*t<<endl;
+		local_connectivity  = find_local_connectivity(org_graph, c, n, 2*s+1, 2*t);
+        if (len(local_connectivity, n) < len(global_connectivity, n))
+			for (int i=0; i<n; i++)
+				global_connectivity[i] = local_connectivity[i];
+		if (len(global_connectivity, n)==1){
+            delete [] local_connectivity;
+			return global_connectivity;
 		}
+		delete [] local_connectivity;
+		
 	}
    return global_connectivity;
+}
+int find_connected_components (matrix<bool> g, int n)
+{
+	bool* used = new bool[n];
+	memset(used, false , sizeof(bool)*n); 
+	cout << "Components:\n";
+	int count_component=0;
+	for (int v=0; v<n; ++v)
+		if (!used[v])
+		{
+			cout << "[ " << v;
+			count_component ++;
+			int* q=new int[n];
+			memset(q, 0 , sizeof(int)*n); 
+			int h=0, t=0;
+			q[t++] = v;
+			used[v] = true;
+			while (h < t)
+			{
+				int cur = q[h++];
+				for(int j=0; j<n; j++)
+				{
+					if ((g[cur][j]==1)&&(!used[j]))
+					{
+						used[j] = true;
+						q[t++] = j;
+						cout << ", " << j;
+					}
+				}
+			}
+			cout << " ]\n";
+		}
+		return count_component;
+}
+
+matrix<bool> delete_vertex_from_graph(matrix<bool> graph, int n, int* vertex_connectivity)
+{
+	matrix<bool> graph_without_VC;//новый граф с удаленными вершинами из 
+	                              // множества вершинной связности графа
+	int new_n = n - len(vertex_connectivity,n);
+	graph_without_VC = matrix<bool>(new_n, new_n);
+    
+	int start_i =0;
+	int start_j =0;
+	int str_num, col_num;
+
+	for(int i=0; i<new_n; i++){
+		str_num = start_i;
+		while (vertex_connectivity[str_num]!= 0){
+			str_num ++;
+		    start_i = str_num;
+		}
+		start_j =0;
+		for(int j=0; j<new_n; j++){
+			col_num = start_j;
+			while (vertex_connectivity[col_num]!= 0){
+				col_num ++;
+				start_j = col_num;
+			}
+			graph_without_VC[i][j] = graph[str_num][col_num];
+			start_j++;
+		}
+        start_i++;
+	}
+    return graph_without_VC;
 }
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	int n = 5;
+	int n = 20;
 	double p;
-	p = 0,4;
+	p = 0.3;
+	int count_component =0;
+	//ПРОВЕРКА СВЯЗНОСТИ ГРАФА!
+	for(int k=0; k<10; k++){
+	do{
 	Graph = generate_graph(n, p);
 	cout<<Graph<<endl;
+	count_component = find_connected_components(Graph, n);
+	} while (count_component > 1);
+
 	int* vertex_connectivity = find_vertex_connectivity(n);
+	cout<<endl;
 	for (int i=0; i< n; i++)
 		cout<<vertex_connectivity[i]<<" ";
 	cout<<endl;
+	
+    matrix<bool> new_graph = delete_vertex_from_graph(Graph, n, vertex_connectivity);
+	cout<<new_graph;
+	int n_new = n - len(vertex_connectivity, n );
+    count_component = find_connected_components(new_graph, n_new);
+	}
 	cin>> p;
-
 	return 0;
 }
 
-/*
-typedef vector<int> vint;
-typedef vector<vint> vvint;
-const int inf = 1000*1000*1000;
-
-	int n = 2*n_;//далее работаем с раздвоенным графом
-    vvint c (n, vint(n));
-	for (int i=0; i<n; i++)
-	{
-		if (i==0)
-		    for (int j=0; j<n; j++)
-			{   if (j==0) c[i][j]=C[s2][s2];
-	            if (j==s2) c[i][j]=C[s2][0];
-				if (j==t1) c[i][j]=C[s2][n-1];
-                if (j==n-1) c[i][j]=C[s2][t1]; 
-				if ((j!=0)&&(j!=n-1)&&(j!=s2)&&(j!=t1)) c[i][j]=C[s2][j]; 
-		     }
-        if (i==n-1)
-			for (int j=0; j<n; j++){
-                if (j==0) c[i][j]=C[t1][s2];
-	            if (j==s2) c[i][j]=C[t1][0];
-				if (j==t1) c[i][j]=C[t1][n-1];
-                if (j==n-1) c[i][j]=C[t1][t1]; 
-				if ((j!=0)&&(j!=n-1)&&(j!=s2)&&(j!=t1)) c[i][j]=C[t1][j]; } 
-		if (i==s2)
-			for (int j=0; j<n; j++){
-                if (j==0) c[i][j]=C[0][s2];
-	            if (j==s2) c[i][j]=C[0][0];
-				if (j==t1) c[i][j]=C[0][n-1];
-                if (j==n-1) c[i][j]=C[0][t1]; 
-				if ((j!=0)&&(j!=n-1)&&(j!=s2)&&(j!=t1)) c[i][j]=C[0][j]; }
-        if (i==t1)
-			for (int j=0; j<n; j++){
-                if (j==0) c[i][j]=C[n-1][s2];
-	            if (j==s2) c[i][j]=C[n-1][0];
-				if (j==t1) c[i][j]=C[n-1][n-1];
-                if (j==n-1) c[i][j]=C[n-1][t1]; 
-				if ((j!=0)&&(j!=n-1)&&(j!=s2)&&(j!=t1)) c[i][j]=C[n-1][j]; }
-		if ((i!=0)&&(i!=n-1)&&(i!=s2)&&(i!=t1))
-            for (int j=0; j<n; j++)
-                 c[i][j]=C[i][j]; 
-	}
-
-     //меняем вершину с номером s2 c 0, а с номером t1 c n-1
-	// исток - вершина 0, сток - вершина n-1
-
-	vvint f (n, vint(n));
-	for (;;)
-	{
-    	vint from (n, -1);
-		vint q (n);
-		int h=0, t=0;
-		q[t++] = 0;
-		from[0] = 0;
-		for (int cur; h<t;)
-		{
-			cur = q[h++];
-			for (int v=0; v<n; v++)
-				if (from[v] == -1 &&
-					c[cur][v]-f[cur][v] > 0)
-				{
-					q[t++] = v;
-					from[v] = cur;
-				}
-		}
-
-		if (from[n-1] == -1)
-			break;
-		int cf = inf;
-		for (int cur=n-1; cur!=0; )
-		{
-			int prev = from[cur];
-			cf = min (cf, c[prev][cur]-f[prev][cur]);
-			cur = prev;
-		}
-
-		for (int cur=n-1; cur!=0; )
-		{
-			int prev = from[cur];
-			f[prev][cur] += cf;
-			f[cur][prev] -= cf;
-			cur = prev;
-		}
-
-	}
-	int flow = 0;
-	for (int i=0; i<n; i++)
-		if (c[0][i])
-			flow += f[0][i];
-			*/
