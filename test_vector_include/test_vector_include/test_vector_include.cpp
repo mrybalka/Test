@@ -393,6 +393,88 @@ matrix<bool> delete_vertex_from_graph(matrix<bool> graph, int n, int* vertex_con
     return graph_without_VC;
 }
 
+void new_algorithm(matrix<bool> g, int n, int count_vertex_in_block)
+{
+	//набираем компоненту связности размером меньше или равно count_vertex_in_block
+	matrix<bool> components = matrix<bool>(n, n);
+	for (int i=0; i<n; i++)
+		for (int j=0; j<n; j++)
+			components[i][j] = 0;
+	bool* common_cols = new bool[n];
+    memset(common_cols, false , sizeof(bool)*n); 
+
+	bool* used = new bool[n];
+	memset(used, false , sizeof(bool)*n); 
+	//
+	int count;
+	int component_number =0;
+
+    for (int v=0; v<n; ++v)
+	  {
+	   	if (!used[v])
+		{
+			count = 0;
+			int* q=new int[n];
+			memset(q, 0 , sizeof(int)*n); 
+			int h=0, t=0;
+			q[t++] = v;
+			used[v] = true;
+			count ++;
+			components[component_number][v]=1;
+			if (count >= count_vertex_in_block)
+							break;
+			while (h < t)
+			{
+				int cur = q[h++];
+				for(int j=0; j<n; j++)
+				{
+					if ((g[cur][j]==1)&&(!used[j]))
+					{
+						used[j] = true;
+						q[t++] = j;
+						//cout << ", " << j;
+						count ++;
+						components[component_number][j]=1;
+						if (count >= count_vertex_in_block)
+							break;
+					}
+				}
+				if (count >= count_vertex_in_block)
+							break;
+			}
+    	    //cout << " ]\n";
+		//поместить вершины связанные с компонентой в просмотренный и в общие столбцы
+		for(int j=0; j<n; j++)
+			if (components[component_number][j]==true){
+				for (int k=0; k<n; k++)
+					if ((g[j][k]==true)&&(components[component_number][k]==false)){
+						used[k]=true;
+						common_cols[k]=true;
+					}
+			}
+		component_number++;
+		}//if
+ 
+        
+	  }//for
+
+//print 
+cout<<"Common cols: [";
+for(int i=0; i<n;i++)
+    if (common_cols[i]==1)
+        cout<<i<< ", ";
+cout<<"]"<<endl;
+
+cout<<"Components: ";
+for(int i=0; i<n; i++){
+   cout<<"["; 
+   for(int j=0; j<n; j++)
+	   if (components[i][j]==1)
+	        cout<<j<< ", ";
+   cout<<"]"<<endl;
+}
+
+}
 int _tmain(int argc, _TCHAR* argv[])
 {
 	int n = 20;
@@ -403,11 +485,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	for(int k=0; k<10; k++){
 	do{
 	Graph = generate_graph(n, p);
-	cout<<Graph<<endl;
+    //cout<<Graph<<endl;
 	count_component = find_connected_components(Graph, n);
 	} while (count_component > 1);
 
-	int* vertex_connectivity = find_vertex_connectivity(n);
+	/*int* vertex_connectivity = find_vertex_connectivity(n);
 	cout<<endl;
 	for (int i=0; i< n; i++)
 		cout<<vertex_connectivity[i]<<" ";
@@ -416,7 +498,9 @@ int _tmain(int argc, _TCHAR* argv[])
     matrix<bool> new_graph = delete_vertex_from_graph(Graph, n, vertex_connectivity);
 	cout<<new_graph;
 	int n_new = n - len(vertex_connectivity, n );
-    count_component = find_connected_components(new_graph, n_new);
+    count_component = find_connected_components(new_graph, n_new);*/
+	
+	new_algorithm(Graph, n , 5);
 	}
 	cin>> p;
 	return 0;
