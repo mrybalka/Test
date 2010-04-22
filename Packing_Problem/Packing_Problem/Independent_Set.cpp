@@ -1363,6 +1363,7 @@ matrix<bool> res;
 matrix<bool> new_graph;
 new_graph = delete_vertex_from_graph(Graph, n, vertex_connectivity);
 //новый граф не содержит удаленных вершин, его размерность меньше на число общих стобцов
+//cout<<new_graph<<endl;    
 res = matrix<bool>(n, n);
 for(int i=0; i<n; i++)
   for(int j=0; j<n; j++)
@@ -1379,7 +1380,16 @@ for (int v=0; v<new_n; ++v){
 			int h=0, t=0;
 			q[t++] = v;
 			used[v] = true;
-            j_old = v + len(vertex_connectivity, v+1);
+            int number_v_zero =-1;
+			int i;
+			for(i=0; i<n; i++)
+			   if (vertex_connectivity[i]==0)
+				{   
+					number_v_zero++;
+					if (number_v_zero == v)
+				        break;
+			    }
+			j_old = i;//v + len(vertex_connectivity, v+1);
 			res[component_number][j_old]=1;
 			while (h < t)
 			{
@@ -1393,7 +1403,16 @@ for (int v=0; v<new_n; ++v){
 						// j_old = j + len(vertex_conectivity,j)
 						used[j] = true;
 						q[t++] = j;
-                        j_old = j + len(vertex_connectivity, j+1);
+                        number_v_zero =-1;
+						for(i=0; i<n; i++)
+							if (vertex_connectivity[i]==0)
+							{   
+								number_v_zero++;
+								if (number_v_zero == j)
+									 break;
+							}
+						j_old = i;//v + len(vertex_connectivity, v+1);
+						//j_old = j + len(vertex_connectivity, j+1);
 						res[component_number][j_old]=1;
 						//cout << ", " << j;
 					}
@@ -1404,7 +1423,7 @@ for (int v=0; v<new_n; ++v){
  }
 return res;
 }
-matrix<bool> Independent_Set_Problem::evristic_algorithm(int count_vertex_in_block, bool* &common_cols)
+matrix<bool> Independent_Set_Problem::evristic_algorithm(int count_vertex_in_block, int* &common_cols)
 //Алгоритм набирает связный подграф(блок) заданного размера, удаляет из графа все вершины,
 //связывающие этот блок с остальным графом, в остатке находит все компоненты связности
 // и для каждой компоненты размер, которой больше заданного числа вершин снова повторят все занова
@@ -1415,8 +1434,8 @@ matrix<bool> Independent_Set_Problem::evristic_algorithm(int count_vertex_in_blo
 	for (int i=0; i<n; i++)
 		for (int j=0; j<n; j++)
 			components[i][j] = 0;
-	common_cols = new bool[n];
-    memset(common_cols, false , sizeof(bool)*n); 
+	common_cols = new int[n];
+    memset(common_cols, 0 , sizeof(int)*n); 
 
 	bool* used = new bool[n];
 	memset(used, false , sizeof(bool)*n); 
@@ -1464,7 +1483,7 @@ matrix<bool> Independent_Set_Problem::evristic_algorithm(int count_vertex_in_blo
 				for (int k=0; k<n; k++)
 					if ((Graph[j][k]==true)&&(components[component_number][k]==false)){
 						used[k]=true;
-						common_cols[k]=true;
+						common_cols[k]=1;
 					}
 			}
 		component_number++;
@@ -1474,7 +1493,7 @@ matrix<bool> Independent_Set_Problem::evristic_algorithm(int count_vertex_in_blo
 	  }//for
 
 //print 
-cout<<"Common cols: [";
+/*cout<<"Common cols: [";
 for(int i=0; i<n;i++)
     if (common_cols[i]==1)
         cout<<i<< ", ";
@@ -1487,6 +1506,6 @@ for(int i=0; i<n; i++){
 	   if (components[i][j]==1)
 	        cout<<j<< ", ";
    cout<<"]"<<endl;
-}
+}*/
 return components; 
 }

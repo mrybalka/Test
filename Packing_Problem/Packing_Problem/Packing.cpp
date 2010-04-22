@@ -3747,8 +3747,8 @@ int* Packing_Problem::Go_Over_L_Class_Block(int d, int &k , bool start_rec,bool 
 	      
 	x_1=LEXMAX_M();
 	if (x_1==0) return x;
-	for (int i=0; i<size_n;i++) cout<<x_1[i]<<" ";
-	cout<<endl;
+	//for (int i=0; i<size_n;i++) cout<<x_1[i]<<" ";
+	//cout<<endl;
 		
 	Round_Vect(x_1);
 	if (Check_Int(x_1,Eps)==1) 
@@ -4411,9 +4411,21 @@ void Packing_Problem::ConvertMatrix_to_BlockMatrix()
 	int* array_vertex;
 	matrix<bool> matr_component;
 	I=Get_Equivalent_MIS();
-	array_vertex = I.find_vertex_connectivity();
-	matr_component = I.del_vertex_and_find_components(array_vertex);
-    Shuffle_matrix_coloms(array_vertex, matr_component);
+	matr_component=I.evristic_algorithm(5, array_vertex);
+	//--------------------------------------------------
+	//array_vertex = I.find_vertex_connectivity();
+	//matr_component = I.del_vertex_and_find_components(array_vertex);
+	//--------------------------------------------------
+	/*for(int i=0; i<size_n; i++)
+		cout<<array_vertex[i]<<" ";*/
+	
+    /*for(int i=0; i<size_n ; i++)
+	{
+		cout<<endl;
+		for(int j=0; j<size_n; j++)
+			cout<<matr_component[i][j]<<" ";
+	}*/
+	Shuffle_matrix_coloms(array_vertex, matr_component);
     Shuffle_matrix_lines_and_fill_mbp(array_vertex, matr_component);
 }
 
@@ -4430,6 +4442,7 @@ void Packing_Problem:: Shuffle_matrix_coloms(int* array_vertex, matrix<bool> mat
 	//перемещаем связующие столбцы в начало
 	vertex_number =0;
 	for (int i=0; i<size_n; i++)
+	{
 		if (array_vertex[i]==1)
 		{
 		   if (i==vertex_number)
@@ -4447,28 +4460,54 @@ void Packing_Problem:: Shuffle_matrix_coloms(int* array_vertex, matrix<bool> mat
 		  shuffle[vertex_number]=shuffle[i];
 		  shuffle[i]=temp;
           vertex_number++;
+		  /*for(int i=0; i<size_n; i++)
+			  cout<<shuffle[i]<<" ";
+		  cout<<endl;*/
 		}
+	}
 
     //перемещаем столбцы отвечающие компонентам
     for(int i=0; i<size_n; i++)//цикл по компонентам
+	{
 		for(int j=0; j< size_n; j++)//цикл по вершинам в компоненте
+		{
            if (matr_component[i][j]==1)
 		   {
+			  int t=0;
+			  while (shuffle[t]!=j) t++;
 			  //меняем местами столбцы j и vertex_number
+			  if (t==vertex_number){
+				  vertex_number++;
+				  continue;
+			  }
 			  for(k=0; k< size_m; k++) 
 			  {
-				  vsp=A[k][shuffle[j]];
-				  A[k][shuffle[j]]=A[k][vertex_number];
+				  vsp=A[k][t];
+				  A[k][t]=A[k][vertex_number];
 				  A[k][vertex_number]=vsp;
 			  }
-			  temp = shuffle[shuffle[j]];
-			  shuffle[shuffle[j]]=shuffle[shuffle[vertex_number]];
-			  shuffle[shuffle[vertex_number]]=temp;
+			  //int s=0;
+			  //while (shuffle[s]!=vertex_number) s++;
+			  
+			  /*temp = shuffle[t];
+			  shuffle[t]=shuffle[s];
+			  shuffle[s]=temp;*/
+			  temp = shuffle[vertex_number];
+			  shuffle[vertex_number]=j;
+			  shuffle[t]=temp;
+			  		  
+			  vertex_number++;
+			  
+			 /*for(int s=0; s<size_n; s++)
+			  cout<<shuffle[s]<<" ";
+			  cout<<endl;*/
 
 		   }
+		}
+	}
 
 	flag_shuffle=true;
-	//cout<<A;
+	//cout<<"sort cols"<<A;
 
 }
 void Packing_Problem:: Shuffle_matrix_lines_and_fill_mbp(int* array_vertex, matrix<bool> matr_component)
@@ -4479,6 +4518,11 @@ void Packing_Problem:: Shuffle_matrix_lines_and_fill_mbp(int* array_vertex, matr
 	for (int i=0; i<size_n; i++)
 		if (array_vertex[i]==1) r++;
 	
+	/*cout<<"array_vertex=";
+	for (int i=0; i<size_n; i++)
+		cout<<array_vertex[i]<<" ";
+	cout<<endl;*/
+	
 	int block_kol =0;
 	for (int i=0; i<size_n; i++)
 		for (int j=0; j<size_n; j++)
@@ -4487,7 +4531,11 @@ void Packing_Problem:: Shuffle_matrix_lines_and_fill_mbp(int* array_vertex, matr
 				block_kol++;
 				break;
 			}
-    //------------------создание блочной структуры-------------------//
+   
+	/*cout<<"r="<<r<<endl;
+	cout<<"block_kol="<<block_kol<<endl;*/
+	
+	//------------------создание блочной структуры-------------------//
 	Matrix_Block_Param=new Block;
 	Matrix_Block_Param->r=r;
 	Matrix_Block_Param->block_kol=block_kol;
@@ -4506,6 +4554,7 @@ void Packing_Problem:: Shuffle_matrix_lines_and_fill_mbp(int* array_vertex, matr
 			continue;
         block_number ++;
 		Matrix_Block_Param->Blocks[block_number].n_size=count; 
+		//cout<<"block "<<block_number<<" size="<<count<<endl;
 	}
 	
 	//------сортировка строк и фиксация размеров блоков---------------//
@@ -4531,11 +4580,17 @@ void Packing_Problem:: Shuffle_matrix_lines_and_fill_mbp(int* array_vertex, matr
 			   }
 			 if (flag)
 			 {	//меняем местами line_number и j
+				 if (line_number==i)
+				 {
+					 m_size++;
+					 line_number++;
+					 continue;
+				 }
 				 for(int k=0; k< size_n; k++) 
 			     {
 				   vsp=A[line_number][k];
-				   A[line_number][k]=A[j][k];
-				   A[j][k]=vsp;
+				   A[line_number][k]=A[i][k];
+				   A[i][k]=vsp;
 			     }
 				 m_size++;
 			     line_number++; 

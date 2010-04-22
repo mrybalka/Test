@@ -395,7 +395,9 @@ int _tmain(int argc, _TCHAR* argv[])
 			 cin>>size_m;
 		 	 cout<<"Probability = ";
 			 cin>>p;
-		     P=new Packing_Problem(size_n,size_m,p);
+		     for(int i=0; i<15; i++)
+			 {
+				P=new Packing_Problem(size_n,size_m,p);
 			 //решаем стандартным алгоритмом
              OutFile.open("D:\logtest.txt",ios_base::app);
 			 start=clock();
@@ -405,24 +407,35 @@ int _tmain(int argc, _TCHAR* argv[])
 			 if (y!=0)
 				OutFile<<P->GetSize_n()<<'\t'<<P->GetSize_m()<<'\t'<<1<<'\t'<<y[0]<<'\t'<<k<<'\t'<<sec<<'\t'<<endl;
 			 else OutFile<<P->GetSize_n()<<'\t'<<P->GetSize_m()<<'\t'<<1<<'\t'<<"Time Out"<<'\t'<<k<<'\t'<<sec<<'\t'<<endl;
-			//OutFile<<str_name<<'\t'<<N.GetSize_n()<<'\t'<<N.GetSize_m()<<'\t'<<1<<'\t'<<y[0]<<'\t'<<k<<'\t'<<sec<<'\t';
+			 //OutFile<<str_name<<'\t'<<N.GetSize_n()<<'\t'<<N.GetSize_m()<<'\t'<<1<<'\t'<<y[0]<<'\t'<<k<<'\t'<<sec<<'\t';
+			 //cout<<"standart vertor =";
+			 //for(int i=0; i<size_n+1; i++)
+			 //	 cout<<y[i]<<" ";
+			 //cout<<endl;
 			 delete[] y;
 			 OutFile.close();
 			 cout<<"Standart complete"<<endl;
+			 //cout<<*(P->GetMatrix());
 			 //--------------
 			 // получить блочную задачу
 			 P->ConvertMatrix_to_BlockMatrix();
-			 //--------------
+			 //cout<<*(P->GetMatrix());
+			  //--------------
 			 OutFile.open("D:\logtest.txt",ios_base::app);
 			 start=clock();
 		     y=P->Go_Over_L_Class_Block(1,k,1,1,1,5,5);
 			 finish=clock();
 	    	 sec = ((double)(finish - start) / CLOCKS_PER_SEC); 
 			 OutFile<<P->GetSize_n()<<'\t'<<P->GetSize_m()<<'\t'<<2<<'\t'<<y[0]<<'\t'<<k<<'\t'<<sec<<'\t'<<endl;
+			 /*cout<<"block vertor =";
+			 cout<<y[0]<<" ";
+			 for(int i=0; i<size_n; i++)
+				 cout<<y[P->shuffle[i]+1]<<" ";
+			 cout<<endl;*/
 			 delete[] y;
 			 OutFile.close();
 			 cout<<"Block complete"<<endl;
-		
+			 }
 			break;
 			}
 		case '8':

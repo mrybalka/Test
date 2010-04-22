@@ -55,7 +55,7 @@ private:
 		int len(int* _array, int n);
 		int find_connected_components (matrix<bool> g, int n);
 		matrix<bool> delete_vertex_from_graph(matrix<bool> graph, int n, int* vertex_connectivity);
-		matrix<bool> evristic_algorithm(int count_vertex_in_block, bool* &common_cols);
+		
 public:
 	    matrix<bool> Graph_A;
 public:
@@ -87,6 +87,7 @@ public:
 		matrix<bool> del_vertex_and_find_components(int* vertex_connectivity);
 		//возвращаем матрицу, в которой строка это компонента связности,
 		//элементы строки это номера вершин входящих в эту компоненту
+		matrix<bool> evristic_algorithm(int count_vertex_in_block, int* &common_cols);
 };
 
 #endif
