@@ -91,7 +91,6 @@ private:
 public:
 	int* shuffle;
 	bool flag_shuffle;
-
 public:
 	Packing_Problem();
 	//------------------------------------------------------

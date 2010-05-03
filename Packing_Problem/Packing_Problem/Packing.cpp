@@ -4377,6 +4377,30 @@ int* Packing_Problem::Go_Over_L_Class_Kuz(int d, int &k, int &kol_sol, int &kol_
 	if ((colzero==true)&&(arr_inc)) delete[] arr_inc;
 	return 0;			
 }
+
+
+char* its(int value)
+{
+	int len=0;
+	int val=value;
+	int rest=val%10;
+	if (value<10) len++;
+	if ((value>=10)&&(value<100)) len=2;
+	if ((value>=100)&&(value<1000)) len=3;
+	if ((value>=1000)&&(value<10000)) len=4;
+
+	char* s=new char[len];
+	for (int i=0; i<len-1;i++)
+	{
+		int v=value/((int)(pow(10.0,len-1-i)));
+		s[i]=CHAR(48+v);
+		value=value-v*(int)pow(10.0,len-1-i);
+	}
+	s[len-1]=CHAR(48+value%10);
+	s[len]='\0';
+	return s;
+}
+int file_number=0;
 //-------------------------------------------------------------------------------------------
 void Packing_Problem::ConvertMatrix_to_BlockMatrix()
 {   /*
@@ -4407,24 +4431,96 @@ void Packing_Problem::ConvertMatrix_to_BlockMatrix()
 	3. столбцы матрицы, соответсвующие найденным вершинам отнести к связующему блоку
 	8. заполнить matrix_block_param
 	*/
-    Independent_Set_Problem I;
+    
+	Independent_Set_Problem I;
+	I=Get_Equivalent_MIS();
 	int* array_vertex;
 	matrix<bool> matr_component;
-	I=Get_Equivalent_MIS();
-	matr_component=I.evristic_algorithm(5, array_vertex);
+	
+	//matrix<bool> graph = matrix<bool>(10,10);
+	/*for(int i=0; i<10; i++)
+		for(int j=0; j<10; j++)
+			if (i==j) graph[i][j]=1;
+			else graph[i][j]=0;*/
+	/*graph[0][1]=1; graph[1][0]=1;
+	graph[0][2]=1; graph[2][0]=1;
+	graph[1][2]=1; graph[2][1]=1;
+	graph[3][4]=1; graph[4][3]=1;
+	graph[4][5]=1; graph[5][4]=1;
+	graph[3][5]=1; graph[5][3]=1;
+	graph[6][8]=1; graph[8][6]=1;
+	graph[7][8]=1; graph[8][7]=1;
+	graph[6][7]=1; graph[7][6]=1;
+	graph[9][2]=1; graph[2][9]=1;
+	graph[9][5]=1; graph[5][9]=1;
+	graph[9][6]=1; graph[6][9]=1;
+	Independent_Set_Problem* I = new Independent_Set_Problem(graph);
+	*/
+	//-------
+	//cout<<*(I.GetGraph());
 	//--------------------------------------------------
-	//array_vertex = I.find_vertex_connectivity();
-	//matr_component = I.del_vertex_and_find_components(array_vertex);
-	//--------------------------------------------------
+	I.find_articulation_point();
+	array_vertex = I.common_cols;
+	
 	/*for(int i=0; i<size_n; i++)
 		cout<<array_vertex[i]<<" ";*/
 	
-    /*for(int i=0; i<size_n ; i++)
+	//-----поиск задач упаковки с графом пересечений содержащим точку сочленения----
+	/*int count=0;
+	for(int i=0; i<size_n; i++)
+		if (array_vertex[i]==1)
+			count++;
+	ofstream OutFile;
+	OutFile.open("D:\logtest.txt",ios_base::app);
+    
+	if (count>0) 
+	{
+		int j;
+		char sl=CHAR(92);
+		string filename1;
+		char* filename;
+								
+		filename1="";
+		filename1=filename1+"d:"+sl+"Test"+sl+"T"+its(file_number)+".txt";
+		filename=new char[100];
+		int h=0;
+		while (filename1[h]){
+		  filename[h]=filename1[h];
+		  h++;
+		}
+		filename[h]='\0';
+					
+		
+		Save_MSP_In_File(filename);			 
+		OutFile<<"yes"<<" ";
+		cout<<"yes"<<" ";
+		file_number++;
+	}
+	else 
+	{
+		OutFile<<"no "<<" ";
+		cout<<"no "<<" ";
+	}
+	OutFile.close();
+    */
+	matr_component = I.del_vertex_and_find_components(array_vertex);
+	
+	/*for(int i=0; i<size_n ; i++)
 	{
 		cout<<endl;
 		for(int j=0; j<size_n; j++)
 			cout<<matr_component[i][j]<<" ";
 	}*/
+	
+	//--------------------------------------------------
+	//--------------------------------------------------
+	//matr_component=I.evristic_algorithm(3, array_vertex);
+	///-------------------------------------------------
+	//--------------------------------------------------
+	//array_vertex = I.find_vertex_connectivity();
+	//matr_component = I.del_vertex_and_find_components(array_vertex);
+	//--------------------------------------------------
+	    
 	Shuffle_matrix_coloms(array_vertex, matr_component);
     Shuffle_matrix_lines_and_fill_mbp(array_vertex, matr_component);
 }

@@ -1509,3 +1509,97 @@ for(int i=0; i<n; i++){
 }*/
 return components; 
 }
+
+void Independent_Set_Problem::dfs (int v, int p) 
+{
+	/*used[v] = true;
+	tin[v] = fup[v] = timer++;
+	int children = 0;
+	
+	for (int i=0; i<n; ++i) 
+	{
+	   if ((v!=i)&&(Graph[v][i]==1))//для каждой вершины y смежной с v
+	   {  
+         if (i != p) 
+		 {
+            if (used[i] == 0) 
+			{
+              children++;
+			  //used[i]=1;
+			  dfs(i, v);
+              fup[v] = min(fup[v], fup[i]);
+            } 
+			else 
+			{// обратное ребро
+               fup[v] = min(fup[v], tin[i]);
+            }
+        }
+	   }
+	}
+    if (tin[v] == fup[v] && (p!= -1 || children >= 2)) {
+     // вершина x - точка сочленения
+		common_cols[v] = true;
+     }
+	 */
+	used[v] = true;
+	tin[v] = fup[v] = timer++;
+	int children = 0;
+
+	for (int i=0; i<n; ++i) 
+	{
+		if ((v!=i)&&(Graph[v][i]==1))
+		{
+			if (i != p) 
+		    {
+				int to = i;
+				if (used[to])//обратное ребро
+				{
+				 fup[v] = min (fup[v], tin[to]);
+				 children++;
+				}
+				else {
+					children++;
+					dfs (to, v);
+					fup[v] = min (fup[v], fup[to]);
+					if (fup[to] >= tin[v])
+						common_cols[v] = true;
+					//if (fup[to] < tin[v])
+					//	common_cols[v] = 0;
+				}
+			}
+		}
+	}
+	//дети у корня должны быть независимые
+	/*if ((p == -1)&&(children > 1))
+	{
+       bool independent_flag = false;
+		for (int i=0; i<n; ++i) 
+	       if ((v!=i)&&(Graph[v][i]==1))
+              for (int j=0; j<n; ++j) 
+        	       if ((v!=j)&&(Graph[v][j]==1)&&(Graph[i][j]==0))
+				       independent_flag = true;
+	   if (independent_flag == true)
+		   common_cols[v] = true;
+	   else
+		   common_cols[v] = false;
+	}*/
+	if (p == -1)
+		common_cols[v] = false;
+	
+}
+
+void Independent_Set_Problem::find_articulation_point()
+{
+used = new bool[n];
+memset(used, false , sizeof(bool)*n); 
+common_cols = new int[n];
+memset(common_cols, 0 , sizeof(int)*n); 
+timer=0;
+tin = new int[n];
+fup = new int[n];
+dfs (0);
+delete[] tin;
+delete[] fup;
+delete[] used;
+
+}

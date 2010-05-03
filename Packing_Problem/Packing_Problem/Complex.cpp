@@ -395,9 +395,36 @@ int _tmain(int argc, _TCHAR* argv[])
 			 cin>>size_m;
 		 	 cout<<"Probability = ";
 			 cin>>p;
-		     for(int i=0; i<15; i++)
+		     int count;
+			 cout<<"Count of tasks = ";
+			 cin>>count;
+		     
+			 //проверка на содержание точки сочленения
+			 /*for(int i=0; i<count; i++)
 			 {
-				P=new Packing_Problem(size_n,size_m,p);
+			 P=new Packing_Problem(size_n,size_m,p);
+			 P->ConvertMatrix_to_BlockMatrix();
+			 }*/
+			  
+			 for(int i=0; i<count; i++)
+			 {
+			 int j;
+			 char sl=CHAR(92);
+			 string filename1;
+			 char* filename;
+						
+			 filename1="";
+			 filename1=filename1+"d:"+sl+"Test"+sl+"T"+int_to_str(count)+".txt";
+			 filename=new char[100];
+			 int h=0;
+			 while (filename1[h]){
+				filename[h]=filename1[h];
+				h++;
+				}
+			 filename[h]='\0';
+			 
+			 P = new Packing_Problem(filename,1,0);
+			 //P=new Packing_Problem(size_n,size_m,p);
 			 //решаем стандартным алгоритмом
              OutFile.open("D:\logtest.txt",ios_base::app);
 			 start=clock();
@@ -405,25 +432,24 @@ int _tmain(int argc, _TCHAR* argv[])
 		     finish=clock();
 	    	 sec = ((double)(finish - start) / CLOCKS_PER_SEC); 
 			 if (y!=0)
-				OutFile<<P->GetSize_n()<<'\t'<<P->GetSize_m()<<'\t'<<1<<'\t'<<y[0]<<'\t'<<k<<'\t'<<sec<<'\t'<<endl;
+				OutFile<<P->GetSize_n()<<'\t'<<P->GetSize_m()<<'\t'<<1<<'\t'<<y[0]<<'\t'<<k<<'\t'<<sec<<'\t';
 			 else OutFile<<P->GetSize_n()<<'\t'<<P->GetSize_m()<<'\t'<<1<<'\t'<<"Time Out"<<'\t'<<k<<'\t'<<sec<<'\t'<<endl;
-			 //OutFile<<str_name<<'\t'<<N.GetSize_n()<<'\t'<<N.GetSize_m()<<'\t'<<1<<'\t'<<y[0]<<'\t'<<k<<'\t'<<sec<<'\t';
-			 //cout<<"standart vertor =";
-			 //for(int i=0; i<size_n+1; i++)
-			 //	 cout<<y[i]<<" ";
-			 //cout<<endl;
+		 	 /*cout<<"standart vertor =";
+			 for(int i=0; i<size_n+1; i++)
+			 	 cout<<y[i]<<" ";
+			 cout<<endl;*/
 			 delete[] y;
 			 OutFile.close();
 			 cout<<"Standart complete"<<endl;
 			 //cout<<*(P->GetMatrix());
 			 //--------------
 			 // получить блочную задачу
+			 start=clock();
 			 P->ConvertMatrix_to_BlockMatrix();
 			 //cout<<*(P->GetMatrix());
 			  //--------------
 			 OutFile.open("D:\logtest.txt",ios_base::app);
-			 start=clock();
-		     y=P->Go_Over_L_Class_Block(1,k,1,1,1,5,5);
+			 y=P->Go_Over_L_Class_Block(1,k,1,1,1,5,5);
 			 finish=clock();
 	    	 sec = ((double)(finish - start) / CLOCKS_PER_SEC); 
 			 OutFile<<P->GetSize_n()<<'\t'<<P->GetSize_m()<<'\t'<<2<<'\t'<<y[0]<<'\t'<<k<<'\t'<<sec<<'\t'<<endl;
